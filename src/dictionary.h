@@ -1,5 +1,6 @@
 #include "3rd_party/json.hpp"
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -34,6 +35,24 @@ public:
     {
         entries.emplace_back(std::move(entry));
         map[entries.back().word] = Size() - 1;
+    }
+
+    void Remove(const std::string& word)
+    {
+        if (map.find(word) == map.end())
+        {
+            return;
+        }
+        auto idx = map[word];
+        entries[idx].word = "";
+    }
+
+    std::optional<size_t> GetIdx(const std::string& word)
+    {
+        auto iter = map.find(word);
+        return (iter == map.end())
+            ? std::nullopt
+            : std::optional{iter->second};
     }
 
     size_t Size() const
@@ -102,7 +121,10 @@ namespace nlohmann
             j = json{};
             for (size_t i = 0, size = dict.Size(); i < size; ++i)
             {
-                j.push_back(dict[i]);
+                if (dict[i].word != "")
+                {
+                    j.push_back(dict[i]);
+                }
             }
         }
 

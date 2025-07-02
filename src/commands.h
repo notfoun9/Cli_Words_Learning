@@ -1,15 +1,19 @@
+#include "3rd_party/json.hpp"
 #include "dictionary.h"
 #include "input.h"
 #include "tools.h"
+#include <cstdio>
 #include <fstream>
+#include <optional>
 
 using nlohmann::json;
 
 class Commands
 {
 public:
-    static void GuessTheWord(const Dictionary& dict)
+    static void GuessTheWord(const json& j)
     {
+        auto dict = j.get<Dictionary>();
         if (dict.Empty())
         {
             std::cout << "Dictionary is empty. Add some entries first" << std::endl;
@@ -18,8 +22,7 @@ public:
 
         auto& e = PickRandomEntry(dict);
         std::cout << "Give the definition of:\n" << e.word << '\n';
-        std::string tmp;
-        std::cin >> tmp;
+        std::getchar();
         std::cout << "The answer is:\n" << e.definition << std::endl;
     }
 
@@ -28,7 +31,8 @@ public:
         if (argc == 2)
         {
             std::cout << "Error: No word provided" << std::endl;
-            std::cout << "The usage is \"words --add <word>\"" << std::endl;
+            std::cout << "The usage is \"words add <word>\"" << std::endl;
+            return;
         }
 
         Entry newWord;
@@ -37,21 +41,20 @@ public:
             newWord.word += argv[i];
         }
 
-        Input::launchVim();
-        Input::saveDefinition(newWord.definition);
+        Input::launchVim(TMP_FILE_PATH);
+        Input::saveDefinition(TMP_FILE_PATH, newWord.definition);
+        Input::deleteFile(TMP_FILE_PATH);
 
-        std::cout << "\n\nYou've added a new word: \""
-                  << newWord.word << "\"\nWith definition: \""
-                  << newWord.definition << "\"" << std::endl;
+        std::cout << "\n\nYou've added a new word:\n"
+                  << newWord.word << " - "
+                  << newWord.definition << std::endl;
 
         j.push_back(newWord);
-
-        std::ofstream ofile{ JSON_PATH };
-        ofile << j.dump(4);
     }
 
-    static void Show(const Dictionary& dict)
+    static void Show(const json& j)
     {
+        auto dict = j.get<Dictionary>();
         std::ofstream o{TMP_FILE_PATH};
         for (size_t i = 0, size = dict.Size(); i < size; ++i)
         {
@@ -59,7 +62,47 @@ public:
         }
         o.close();
 
-        Input::launchVim();
+        Input::launchVim(TMP_FILE_PATH);
+        Input::deleteFile(TMP_FILE_PATH);
+    }
+
+    static void Delete(json& j, int argc, char** argv)
+    {
+        auto dict = j.get<Dictionary>();
+        if (argc < 3)
+        {
+            std::cout << "Error: No word provided\n"
+                      << "The usage is \"words delete <word>\"" << std::endl;
+            return;
+        }
+        dict.Remove(argv[2]);
+
+        j = json(dict);
+    }
+
+    static void Edit(json& j, int argc, char** argv)
+    {
+        auto dict = j.get<Dictionary>();
+        if (argc < 3)
+        {
+            std::cout << "Error: No word provided\n"
+                      << "The usage is \"words edit <word>\"" << std::endl;
+            return;
+        }
+
+        auto idx = dict.GetIdx(argv[2]);
+        if (idx == std::nullopt)
+        {
+            std::cout << "Error: This is no such word in the dictionary" << std::endl;
+            return;
+        }
+
+        auto& entry = dict[idx.value()];
+        Input::launchVim(TMP_FILE_PATH);
+        Input::saveDefinition(TMP_FILE_PATH, entry.definition);
+        Input::deleteFile(TMP_FILE_PATH);
+
+        j = json(dict);
     }
 
 private:

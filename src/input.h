@@ -10,11 +10,11 @@ const auto  TMP_FILE_PATH  = DIRECTORY_PATH / "tmp.txt";
 class Input
 {
 public:
-    static void launchVim()
+    static void launchVim(const std::filesystem::path& path)
     {
-        if (!std::filesystem::exists(TMP_FILE_PATH))
+        if (!std::filesystem::exists(path))
         {
-            std::ofstream newFile{TMP_FILE_PATH};
+            std::ofstream newFile{path};
         }
 
         std::string command = "vim " + TMP_FILE_PATH.string();
@@ -27,9 +27,14 @@ public:
         }
     }
 
-    static void saveDefinition(std::string& def)
+    static void deleteFile(const std::filesystem::path& path)
     {
-        std::ifstream tmp{TMP_FILE_PATH};
+        std::filesystem::remove(path);
+    }
+
+    static void saveDefinition(const std::filesystem::path& source, std::string& dest)
+    {
+        std::ifstream tmp{source};
         if (!tmp.is_open())
         {
             std::cerr << "Error: Temp file not found." << std::endl;
@@ -38,9 +43,6 @@ public:
 
         std::stringstream buffer;
         buffer << tmp.rdbuf();
-        def = buffer.str();
-        tmp.close();
-
-        std::ofstream o{TMP_FILE_PATH};
+        dest = buffer.str();
     }
 };

@@ -35,19 +35,35 @@ json GetJson()
 int main(int argc, char** argv)
 {
     json j = GetJson();
-    auto dict = j.get<Dictionary>();
 
     if (argc < 2)
     {
-        Commands::GuessTheWord(dict);
+        Commands::GuessTheWord(j);
     }
-    else if (std::strcmp(argv[1], "--add") == 0 || std::strcmp(argv[1], "-a") == 0)
+    else if (std::strcmp(argv[1], "add") == 0)
     {
         Commands::AddWord(j, argc, argv);
+
+        std::ofstream ofile{ JSON_PATH };
+        ofile << j.dump(4);
     }
-    else if (std::strcmp(argv[1], "--show") == 0 || std::strcmp(argv[1], "-s") == 0)
+    else if (std::strcmp(argv[1], "show") == 0)
     {
-        Commands::Show(dict);
+        Commands::Show(j);
+    }
+    else if (std::strcmp(argv[1], "edit") == 0)
+    {
+        Commands::Edit(j, argc, argv);
+
+        std::ofstream ofile{ JSON_PATH };
+        ofile << j.dump(4);
+    }
+    else if (std::strcmp(argv[1], "delete") == 0)
+    {
+        Commands::Delete(j, argc, argv);
+
+        std::ofstream ofile{ JSON_PATH };
+        ofile << j.dump(4);
     }
 
     return 0;
