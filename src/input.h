@@ -10,6 +10,12 @@ const auto  TMP_FILE_PATH  = DIRECTORY_PATH / "tmp.txt";
 class Input
 {
 public:
+    static void writeInFile(const std::filesystem::path& path, const std::string& text)
+    {
+        std::ofstream newFile{path};
+        newFile << text;
+    }
+
     static void launchVim(const std::filesystem::path& path)
     {
         if (!std::filesystem::exists(path))

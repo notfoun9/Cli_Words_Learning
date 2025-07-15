@@ -104,7 +104,10 @@ public:
         }
 
         auto& entry = dict[idx.value()];
+
+        Input::writeInFile(TMP_FILE_PATH, entry.definition);
         Input::launchVim(TMP_FILE_PATH);
+
         Input::saveDefinition(TMP_FILE_PATH, entry.definition);
         Input::deleteFile(TMP_FILE_PATH);
 
