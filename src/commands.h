@@ -60,12 +60,15 @@ public:
 
     static void Show(const json& j)
     {
+        static std::string separator(80, '=');
+
         auto dict = j.get<Dictionary>();
         std::ofstream o{TMP_FILE_PATH};
         for (size_t i = 0, size = dict.Size(); i < size; ++i)
         {
-            o << dict[i].word << '\n' << dict[i].definition << '\n';
+            o << separator << '\n' << dict[i].word << '\n' << dict[i].definition;
         }
+        o << separator;
         o.close();
 
         Input::launchVim(TMP_FILE_PATH);
