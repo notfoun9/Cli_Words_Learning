@@ -13,6 +13,12 @@ class Commands
 public:
     static void GuessTheWord(const json& j)
     {
+        if (!j.is_array())
+        {
+            std::cout << "Dictionary is empty. Add some entries first" << std::endl;
+            return;
+        }
+
         auto dict = j.get<Dictionary>();
         if (dict.Empty())
         {
