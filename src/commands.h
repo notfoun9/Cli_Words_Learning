@@ -16,14 +16,15 @@ public:
         if (group.Empty())
         {
             std::cout << "Group \"" << group.Name()
-                      << "\" is empty. Add some entries first" << std::endl;
+                      << "\" is empty. Add some entries first." << std::endl;
             return;
         }
 
         auto& e = PickRandomEntry(group);
-        std::cout << "Give the definition of:\n" << e.word << '\n';
+        std::cout << "======== From the group \"" << group.Name() << "\" ========\n";
+        std::cout << "Give a definition of the word:\n\"" << e.word << "\"\n";
         std::getchar();
-        std::cout << "The answer is:\n" << e.definition << std::endl;
+        std::cout << "The answer is:\n" << e.definition;
     }
 
     static void AddWord(json& j, int argc, char** argv)
@@ -31,7 +32,7 @@ public:
         if (argc == 2)
         {
             std::cout << "Error: No word provided" << std::endl;
-            std::cout << "The usage is \"words add <word>\"" << std::endl;
+            std::cout << "The usage is `words add <word>`" << std::endl;
             return;
         }
 
@@ -39,6 +40,16 @@ public:
         for (int i = 2; i < argc; ++i)
         {
             newWord.word += argv[i];
+        }
+
+        Group group = j;
+        if (group.Contains(newWord.word))
+        {
+            std::cout << "The word \"" << newWord.word
+                      << "\" has already been added to the group \""
+                      << group.Name() << "\".\nUse `words edit " << newWord.word
+                      << "` to check and edit the set definition\n";
+            return;
         }
 
         Input::launchVim(TMP_FILE_PATH);
@@ -51,7 +62,8 @@ public:
 
         std::cout << "\n\nYou've added a new word:\n"
                   << newWord.word << " - "
-                  << newWord.definition << std::endl;
+                  << newWord.definition
+                  << "to the group " << j["name"] << ".\n";
 
         j["words"].push_back(newWord);
     }
@@ -72,7 +84,7 @@ public:
         if (argc < 3)
         {
             std::cout << "Error: No word provided\n"
-                      << "The usage is \"words delete <word>\"" << std::endl;
+                      << "The usage is `words delete <word>`" << std::endl;
             return;
         }
         group.RemoveEntry(argv[2]);
@@ -86,22 +98,30 @@ public:
         if (argc < 3)
         {
             std::cout << "Error: No word provided\n"
-                      << "The usage is \"words edit <word>\"" << std::endl;
+                      << "The usage is `words edit <word>`" << std::endl;
             return;
         }
         auto word = argv[2];
         if (!group.Contains(word))
         {
-            std::cout << "Error: This is no such word in the groupionary" << std::endl;
+            std::cout << "Error: The word \"" << word
+                      << "\" has not been added to the group \"" 
+                      << group.Name() << "\".\nUse `words add " << word
+                      << "` to add it." << std::endl;
             return;
         }
         auto& entry = group.GetEntry(word);
+
 
         Input::writeInFile(TMP_FILE_PATH, entry.definition);
         Input::launchVim(TMP_FILE_PATH);
 
         Input::saveDefinition(TMP_FILE_PATH, entry.definition);
         Input::deleteFile(TMP_FILE_PATH);
+
+        std::cout << "\n\nYou've added a new definition for the word "
+                  << "\"" << word << "\":\n" << entry.definition <<
+                  "to the group \"" << group.Name() << "\"" << std::endl;
 
         j = json(group);
     }

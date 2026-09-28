@@ -18,6 +18,8 @@ json GetJson(const std::filesystem::path& path)
         }
 
         std::ofstream newFile{ path };
+        newFile << "[\n]\n";
+        newFile.close();
         input.open(path);
     }
     assert(input.fail() == false);

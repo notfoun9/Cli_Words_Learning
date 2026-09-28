@@ -4,7 +4,7 @@
 #include <list>
 #include <unordered_map>
 
-const auto DEFAULT_GROUP_NAME = "ungrouped";
+const auto DEFAULT_GROUP_NAME = "Ungrouped";
 struct Entry
 {
     std::string  word;
@@ -89,6 +89,7 @@ static std::ostream& operator<<(std::ostream& os, const Group& group)
 {
     static std::string separator(80, '=');
     const auto& entries = group.GetAllEntries();
+    os << "Group  \"" << group.Name() << "\"\n\n";
     for (const auto& entry : entries)
     {
         os << separator << '\n' << entry.word << '\n' << entry.definition;
@@ -198,9 +199,7 @@ namespace nlohmann
             auto entries = group.GetAllEntries();
             for (const auto& entry : entries)
             {
-                std::cout << "1" << std::endl;
                 j["words"].push_back(entry);
-                std::cout << "2" << std::endl;
             }
         }
 
