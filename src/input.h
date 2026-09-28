@@ -5,7 +5,8 @@
 
 const auto PARENT_DIR = std::filesystem::path{getenv("HOME")}
                              / ".local" / "share" / "words";
-const auto JSON_PATH      = PARENT_DIR / "words.json";
+const auto DICTIONARY_JSON_PATH      = PARENT_DIR / "dictionary.json";
+const auto ACTIVE_GROUP_JSON_PATH    = PARENT_DIR / "active_group.json";
 const auto TMP_FILE_PATH  = std::filesystem::path{getenv("TMPDIR")} / "tmp.txt";
 
 class Input

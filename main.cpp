@@ -5,12 +5,11 @@
 
 using nlohmann::json;
 
-json GetJson()
+json GetJson(const std::filesystem::path& path)
 {
     std::ifstream input;
 
-    input.open(JSON_PATH);
-    
+    input.open(path);
     if (input.fail())
     {
         if (!std::filesystem::exists(PARENT_DIR))
@@ -18,11 +17,8 @@ json GetJson()
             std::filesystem::create_directory(PARENT_DIR);
         }
 
-        std::ofstream newFile{ JSON_PATH };
-        newFile << "[\n]" << std::endl;
-        newFile.close();
-
-        input.open(JSON_PATH);
+        std::ofstream newFile{ path };
+        input.open(path);
     }
     assert(input.fail() == false);
 
@@ -34,36 +30,50 @@ json GetJson()
 
 int main(int argc, char** argv)
 {
-    json j = GetJson();
+    json dictionaryJson = GetJson(DICTIONARY_JSON_PATH);
+    if (dictionaryJson.empty())
+    {
+        dictionaryJson = Dictionary();
+        std::ofstream ofile{ DICTIONARY_JSON_PATH };
+        ofile << dictionaryJson.dump(4);
+    }
+
+    json activeGroupJson = GetJson(ACTIVE_GROUP_JSON_PATH);
+    if (activeGroupJson.empty())
+    {
+        activeGroupJson = Group();
+        std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
+        ofile << activeGroupJson.dump(4);
+    }
 
     if (argc < 2)
     {
-        Commands::GuessTheWord(j);
+        Commands::GuessTheWord(activeGroupJson);
     }
     else if (std::strcmp(argv[1], "add") == 0)
     {
-        Commands::AddWord(j, argc, argv);
+        Commands::AddWord(activeGroupJson, argc, argv);
 
-        std::ofstream ofile{ JSON_PATH };
-        ofile << j.dump(4);
+        std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
+        ofile << activeGroupJson.dump(4);
     }
     else if (std::strcmp(argv[1], "show") == 0)
     {
-        Commands::Show(j);
+        Commands::Show(activeGroupJson);
     }
     else if (std::strcmp(argv[1], "edit") == 0)
     {
-        Commands::Edit(j, argc, argv);
+        Commands::Edit(activeGroupJson, argc, argv);
 
-        std::ofstream ofile{ JSON_PATH };
-        ofile << j.dump(4);
+        std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
+        ofile << activeGroupJson.dump(4);
     }
     else if (std::strcmp(argv[1], "delete") == 0)
     {
-        Commands::Delete(j, argc, argv);
+        Commands::Delete(activeGroupJson, argc, argv);
 
-        std::ofstream ofile{ JSON_PATH };
-        ofile << j.dump(4);
+        std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
+        ofile << activeGroupJson.dump(4);
     }
 
     return 0;

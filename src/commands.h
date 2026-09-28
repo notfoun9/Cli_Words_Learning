@@ -12,16 +12,11 @@ class Commands
 public:
     static void GuessTheWord(const json& j)
     {
-        if (!j.is_array())
-        {
-            std::cout << "Group is empty. Add some entries first" << std::endl;
-            return;
-        }
-
         auto group = j.get<Group>();
         if (group.Empty())
         {
-            std::cout << "Group is empty. Add some entries first" << std::endl;
+            std::cout << "Group \"" << group.Name()
+                      << "\" is empty. Add some entries first" << std::endl;
             return;
         }
 
@@ -58,7 +53,7 @@ public:
                   << newWord.word << " - "
                   << newWord.definition << std::endl;
 
-        j.push_back(newWord);
+        j["words"].push_back(newWord);
     }
 
     static void Show(const json& j)

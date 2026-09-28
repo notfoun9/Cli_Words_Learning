@@ -4,6 +4,7 @@
 #include <list>
 #include <unordered_map>
 
+const auto DEFAULT_GROUP_NAME = "ungrouped";
 struct Entry
 {
     std::string  word;
@@ -15,8 +16,8 @@ class Group
 public:
     Group() = default;
 
-    Group(std::list<Entry>&& d)
-        : entries(std::move(d))
+    Group(std::string&& name, std::list<Entry>&& d)
+        : name(std::move(name)), entries(std::move(d))
     {
         for (auto iter = entries.begin(), end = entries.end(); iter != end; ++iter)
         {
@@ -67,18 +68,18 @@ public:
         return entries.size();
     }
 
+    const std::string& Name() const
+    {
+        return name;
+    }
+
     bool Empty() const
     {
         return entries.empty();
     }
 
-    friend void swap(Group& l, Group& r)
-    {
-        std::swap(l.map, r.map);
-        std::swap(l.entries, r.entries);
-    }
-
 private:
+    std::string name = DEFAULT_GROUP_NAME;
     std::list<Entry> entries;
     std::unordered_map<
         std::string, decltype(entries.begin())> map;
@@ -95,6 +96,68 @@ static std::ostream& operator<<(std::ostream& os, const Group& group)
     os << separator;
     return os;
 }
+
+class Dictionary
+{
+public:
+    Dictionary()
+    {
+        groups[activeGroup];
+    }
+
+    Dictionary(std::string&& activeGroup, std::vector<Group>& v)
+        : activeGroup(std::move(activeGroup))
+    {
+        for (auto& group : v)
+        {
+            groups[group.Name()] = std::move(group);
+        }
+    }
+
+    bool Contains(const std::string& name) const
+    {
+        return groups.find(name) != groups.end();
+    }
+
+    bool Size() const
+    {
+        return groups.size();
+    }
+
+    bool Empty() const
+    {
+        return groups.empty();
+    }
+
+    auto& GetGroup(const std::string& name)
+    {
+        return groups[name];
+    }
+
+    const auto& ActiveGroupName() const
+    {
+        return activeGroup;
+    }
+
+    void ChangeActiveGroup(const std::string& name)
+    {
+        groups[name];
+        activeGroup = name;
+    }
+
+    const auto& GetActiveGroup() const
+    {
+        return groups.find(activeGroup)->second;
+    }
+
+    const auto& GetAllGroups() const
+    {
+        return groups;
+    }
+private:
+    std::string activeGroup = DEFAULT_GROUP_NAME;
+    std::unordered_map<std::string, Group> groups;
+};
 
 namespace nlohmann
 {
@@ -129,22 +192,58 @@ namespace nlohmann
         static void to_json(json& j, const Group& group)
         {
             j = json{};
+            j["name"] = group.Name();
+            j["words"] = std::list<Entry>();
+
             auto entries = group.GetAllEntries();
             for (const auto& entry : entries)
             {
-                j.push_back(entry);
+                std::cout << "1" << std::endl;
+                j["words"].push_back(entry);
+                std::cout << "2" << std::endl;
             }
         }
 
         static void from_json(const json& j, Group& group)
         {
-
             try
             {
-                auto v = j.get<std::list<Entry>>();
-                Group tmp{std::move(v)};
+                auto name = j["name"].get<std::string>();
+                auto entries = j["words"].get<std::list<Entry>>();
+                group = Group(std::move(name), std::move(entries));
+            }
+            catch(const std::exception& e)
+            {
+                std::cout << "Invalid JSON format" << e.what() << std::endl;
+            }
+        }
+    };
 
-                swap(tmp, group);
+    template<>
+    struct adl_serializer<Dictionary>
+    {
+        static void to_json(json& j, const Dictionary& dictionary)
+        {
+            j = json{};
+            j["activeGroup"] = dictionary.ActiveGroupName();
+            j["groups"] = [&dictionary]{
+                std::vector<Group> v;
+                v.reserve(dictionary.Size());
+                return v;
+            }();
+            auto groups = dictionary.GetAllGroups();
+            for (const auto& [_, group] : groups)
+            {
+                j["groups"].push_back(group);
+            }
+        }
+
+        static void from_json(const json& j, Dictionary& dictionary)
+        {
+            try
+            {
+                auto groups = j["groups"].get<std::vector<Group>>();
+                dictionary = Dictionary{j["activeGroup"], groups};
             }
             catch(const std::exception& e)
             {
