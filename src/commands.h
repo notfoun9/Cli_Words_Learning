@@ -4,7 +4,6 @@
 #include "tools.h"
 #include <cstdio>
 #include <fstream>
-#include <optional>
 
 using nlohmann::json;
 
@@ -15,18 +14,18 @@ public:
     {
         if (!j.is_array())
         {
-            std::cout << "Dictionary is empty. Add some entries first" << std::endl;
+            std::cout << "Group is empty. Add some entries first" << std::endl;
             return;
         }
 
-        auto dict = j.get<Dictionary>();
-        if (dict.Empty())
+        auto group = j.get<Group>();
+        if (group.Empty())
         {
-            std::cout << "Dictionary is empty. Add some entries first" << std::endl;
+            std::cout << "Group is empty. Add some entries first" << std::endl;
             return;
         }
 
-        auto& e = PickRandomEntry(dict);
+        auto& e = PickRandomEntry(group);
         std::cout << "Give the definition of:\n" << e.word << '\n';
         std::getchar();
         std::cout << "The answer is:\n" << e.definition << std::endl;
@@ -49,6 +48,10 @@ public:
 
         Input::launchVim(TMP_FILE_PATH);
         Input::saveDefinition(TMP_FILE_PATH, newWord.definition);
+        if (newWord.definition.back() != '\n')
+        {
+            newWord.definition.push_back('\n');
+        }
         Input::deleteFile(TMP_FILE_PATH);
 
         std::cout << "\n\nYou've added a new word:\n"
@@ -60,53 +63,44 @@ public:
 
     static void Show(const json& j)
     {
-        static std::string separator(80, '=');
-
-        auto dict = j.get<Dictionary>();
-        std::ofstream o{TMP_FILE_PATH};
-        for (size_t i = 0, size = dict.Size(); i < size; ++i)
-        {
-            o << separator << '\n' << dict[i].word << '\n' << dict[i].definition;
-        }
-        o << separator;
-        o.close();
-
+        auto group = j.get<Group>();
+        std::ofstream os{TMP_FILE_PATH};
+        os << group;
+        os.close();
         Input::launchVim(TMP_FILE_PATH);
         Input::deleteFile(TMP_FILE_PATH);
     }
 
     static void Delete(json& j, int argc, char** argv)
     {
-        auto dict = j.get<Dictionary>();
+        auto group = j.get<Group>();
         if (argc < 3)
         {
             std::cout << "Error: No word provided\n"
                       << "The usage is \"words delete <word>\"" << std::endl;
             return;
         }
-        dict.Remove(argv[2]);
+        group.RemoveEntry(argv[2]);
 
-        j = json(dict);
+        j = json(group);
     }
 
     static void Edit(json& j, int argc, char** argv)
     {
-        auto dict = j.get<Dictionary>();
+        auto group = j.get<Group>();
         if (argc < 3)
         {
             std::cout << "Error: No word provided\n"
                       << "The usage is \"words edit <word>\"" << std::endl;
             return;
         }
-
-        auto idx = dict.GetIdx(argv[2]);
-        if (idx == std::nullopt)
+        auto word = argv[2];
+        if (!group.Contains(word))
         {
-            std::cout << "Error: This is no such word in the dictionary" << std::endl;
+            std::cout << "Error: This is no such word in the groupionary" << std::endl;
             return;
         }
-
-        auto& entry = dict[idx.value()];
+        auto& entry = group.GetEntry(word);
 
         Input::writeInFile(TMP_FILE_PATH, entry.definition);
         Input::launchVim(TMP_FILE_PATH);
@@ -114,16 +108,18 @@ public:
         Input::saveDefinition(TMP_FILE_PATH, entry.definition);
         Input::deleteFile(TMP_FILE_PATH);
 
-        j = json(dict);
+        j = json(group);
     }
 
 private:
-    static const Entry& PickRandomEntry(const Dictionary& dict)
+    static const Entry& PickRandomEntry(const Group& group)
     {
-        size_t size = dict.Size();
+        size_t size = group.Size();
         size_t idx = Random::Generate(0, size - 1);
         assert(idx <= size);
 
-        return dict[idx];
+        auto iter = group.GetAllEntries().begin();
+        std::advance(iter, idx);
+        return *iter;
     }
 };

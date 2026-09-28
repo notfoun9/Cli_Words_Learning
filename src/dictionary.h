@@ -1,9 +1,7 @@
 #include "3rd_party/json.hpp"
 #include <iostream>
-#include <optional>
-#include <sstream>
 #include <string>
-#include <vector>
+#include <list>
 #include <unordered_map>
 
 struct Entry
@@ -12,17 +10,17 @@ struct Entry
     std::string  definition;
 };
 
-class Dictionary
+class Group
 {
 public:
-    Dictionary() = default;
+    Group() = default;
 
-    Dictionary(std::vector<Entry>&& d)
+    Group(std::list<Entry>&& d)
         : entries(std::move(d))
     {
-        for (size_t i = 0, size = entries.size(); i < size; ++i)
+        for (auto iter = entries.begin(), end = entries.end(); iter != end; ++iter)
         {
-            map[entries[i].word] = i;
+            map[iter->word] = iter;
         }
     }
 
@@ -34,25 +32,34 @@ public:
     void AddEntry(Entry&& entry)
     {
         entries.emplace_back(std::move(entry));
-        map[entries.back().word] = Size() - 1;
+        map[entries.back().word] = std::prev(entries.end());
     }
 
-    void Remove(const std::string& word)
+    void RemoveEntry(const std::string& word)
     {
         if (map.find(word) == map.end())
         {
             return;
         }
-        auto idx = map[word];
-        entries[idx].word = "";
+        entries.erase(map[word]);
+        map.erase(word);
     }
 
-    std::optional<size_t> GetIdx(const std::string& word)
+    Entry& GetEntry(const std::string& word)
     {
         auto iter = map.find(word);
-        return (iter == map.end())
-            ? std::nullopt
-            : std::optional{iter->second};
+        return *(iter->second);
+    }
+
+    const Entry& GetEntry(const std::string& word) const
+    {
+        auto iter = map.find(word);
+        return *(iter->second);
+    }
+
+    const auto& GetAllEntries() const
+    {
+        return entries;
     }
 
     size_t Size() const
@@ -65,26 +72,29 @@ public:
         return entries.empty();
     }
 
-    const Entry& operator[](size_t idx) const
-    {
-        return entries[idx];
-    }
-
-    Entry& operator[](size_t idx)
-    {
-        return entries[idx];
-    }
-
-    friend void swap(Dictionary& l, Dictionary& r)
+    friend void swap(Group& l, Group& r)
     {
         std::swap(l.map, r.map);
         std::swap(l.entries, r.entries);
     }
 
 private:
-    std::vector<Entry>                       entries;
-    std::unordered_map<std::string, size_t>  map;
+    std::list<Entry> entries;
+    std::unordered_map<
+        std::string, decltype(entries.begin())> map;
 };
+
+static std::ostream& operator<<(std::ostream& os, const Group& group)
+{
+    static std::string separator(80, '=');
+    const auto& entries = group.GetAllEntries();
+    for (const auto& entry : entries)
+    {
+        os << separator << '\n' << entry.word << '\n' << entry.definition;
+    }
+    os << separator;
+    return os;
+}
 
 namespace nlohmann
 {
@@ -114,29 +124,27 @@ namespace nlohmann
     };
 
     template<>
-    struct adl_serializer<Dictionary>
+    struct adl_serializer<Group>
     {
-        static void to_json(json& j, const Dictionary& dict)
+        static void to_json(json& j, const Group& group)
         {
             j = json{};
-            for (size_t i = 0, size = dict.Size(); i < size; ++i)
+            auto entries = group.GetAllEntries();
+            for (const auto& entry : entries)
             {
-                if (dict[i].word != "")
-                {
-                    j.push_back(dict[i]);
-                }
+                j.push_back(entry);
             }
         }
 
-        static void from_json(const json& j, Dictionary& dict)
+        static void from_json(const json& j, Group& group)
         {
 
             try
             {
-                auto v = j.get<std::vector<Entry>>();
-                Dictionary tmp{std::move(v)};
+                auto v = j.get<std::list<Entry>>();
+                Group tmp{std::move(v)};
 
-                swap(tmp, dict);
+                swap(tmp, group);
             }
             catch(const std::exception& e)
             {
