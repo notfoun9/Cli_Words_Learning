@@ -13,9 +13,9 @@ json GetJson()
     
     if (input.fail())
     {
-        if (!std::filesystem::exists(DIRECTORY_PATH))
+        if (!std::filesystem::exists(PARENT_DIR))
         {
-            std::filesystem::create_directory(DIRECTORY_PATH);
+            std::filesystem::create_directory(PARENT_DIR);
         }
 
         std::ofstream newFile{ JSON_PATH };

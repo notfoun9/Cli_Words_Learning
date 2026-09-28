@@ -1,2 +1,4 @@
 json_guide.cpp
 .DS_STORE
+build
+.cache

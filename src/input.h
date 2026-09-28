@@ -3,9 +3,10 @@
 #include <fstream>
 #include <sstream>
 
-const auto  DIRECTORY_PATH = std::filesystem::path{getenv("HOME")} / ".config" / "words";
-const auto  JSON_PATH      = DIRECTORY_PATH / "words.json";
-const auto  TMP_FILE_PATH  = DIRECTORY_PATH / "tmp.txt";
+const auto PARENT_DIR = std::filesystem::path{getenv("HOME")}
+                             / ".local" / "share" / "words";
+const auto JSON_PATH      = PARENT_DIR / "words.json";
+const auto TMP_FILE_PATH  = std::filesystem::path{getenv("TMPDIR")} / "tmp.txt";
 
 class Input
 {
