@@ -64,6 +64,17 @@ int main(int argc, char** argv)
     {
         Commands::Delete(activeGroupJson, argc, argv);
     }
+    else if (std::strcmp(argv[1], "groups") == 0)
+    {
+        std::cout << "Active group is " << dictionaryJson["activeGroup"];
+        std::cout << "\nAvailable groups are:";
+        auto groups = dictionaryJson.get<Dictionary>().GetAllGroups();
+        for (const auto& [name, _] : groups)
+        {
+            std::cout << "\n  \"" << name << '\"';
+        }
+        std::endl(std::cout);
+    }
     else if (std::strcmp(argv[1], "switch") == 0)
     {
         Dictionary dictionary = dictionaryJson;
@@ -71,7 +82,7 @@ int main(int argc, char** argv)
         if (argc < 3)
         {
             std::cout << "Error: No group name provided\n"
-                      << "The usage is `words switch <group_name>`" << std::endl;
+                      << "The usage is `words switch <group>`" << std::endl;
             return 0;
         }
 
@@ -81,6 +92,7 @@ int main(int argc, char** argv)
     }
     std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
     ofile << activeGroupJson.dump(4);
+    ofile.close();
     ofile.open( DICTIONARY_JSON_PATH );
     ofile << dictionaryJson.dump(4);
 

@@ -60,7 +60,7 @@ public:
         }
         Input::deleteFile(TMP_FILE_PATH);
 
-        std::cout << "\n\nYou've added a new word:\n"
+        std::cout << "\nYou've added a new word:\n"
                   << newWord.word << " - "
                   << newWord.definition
                   << "to the group " << j["name"] << ".\n";
