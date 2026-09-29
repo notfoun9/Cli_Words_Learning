@@ -36,16 +36,12 @@ int main(int argc, char** argv)
     if (dictionaryJson.empty())
     {
         dictionaryJson = Dictionary();
-        std::ofstream ofile{ DICTIONARY_JSON_PATH };
-        ofile << dictionaryJson.dump(4);
     }
 
     json activeGroupJson = GetJson(ACTIVE_GROUP_JSON_PATH);
     if (activeGroupJson.empty())
     {
         activeGroupJson = Group();
-        std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
-        ofile << activeGroupJson.dump(4);
     }
 
     if (argc < 2)
@@ -55,9 +51,6 @@ int main(int argc, char** argv)
     else if (std::strcmp(argv[1], "add") == 0)
     {
         Commands::AddWord(activeGroupJson, argc, argv);
-
-        std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
-        ofile << activeGroupJson.dump(4);
     }
     else if (std::strcmp(argv[1], "show") == 0)
     {
@@ -66,17 +59,30 @@ int main(int argc, char** argv)
     else if (std::strcmp(argv[1], "edit") == 0)
     {
         Commands::Edit(activeGroupJson, argc, argv);
-
-        std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
-        ofile << activeGroupJson.dump(4);
     }
     else if (std::strcmp(argv[1], "delete") == 0)
     {
         Commands::Delete(activeGroupJson, argc, argv);
-
-        std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
-        ofile << activeGroupJson.dump(4);
     }
+    else if (std::strcmp(argv[1], "switch") == 0)
+    {
+        Dictionary dictionary = dictionaryJson;
+        dictionary.GetActiveGroup() = activeGroupJson;
+        if (argc < 3)
+        {
+            std::cout << "Error: No group name provided\n"
+                      << "The usage is `words switch <group_name>`" << std::endl;
+            return 0;
+        }
+
+        dictionary.ChangeActiveGroup(argv[2]);
+        dictionaryJson = dictionary;
+        activeGroupJson = dictionary.GetActiveGroup();
+    }
+    std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
+    ofile << activeGroupJson.dump(4);
+    ofile.open( DICTIONARY_JSON_PATH );
+    ofile << dictionaryJson.dump(4);
 
     return 0;
 }

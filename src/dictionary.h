@@ -14,7 +14,8 @@ struct Entry
 class Group
 {
 public:
-    Group() = default;
+    Group(const std::string& name = DEFAULT_GROUP_NAME) : name(name)
+    {}
 
     Group(std::string&& name, std::list<Entry>&& d)
         : name(std::move(name)), entries(std::move(d))
@@ -79,7 +80,7 @@ public:
     }
 
 private:
-    std::string name = DEFAULT_GROUP_NAME;
+    std::string name;
     std::list<Entry> entries;
     std::unordered_map<
         std::string, decltype(entries.begin())> map;
@@ -120,21 +121,6 @@ public:
         return groups.find(name) != groups.end();
     }
 
-    bool Size() const
-    {
-        return groups.size();
-    }
-
-    bool Empty() const
-    {
-        return groups.empty();
-    }
-
-    auto& GetGroup(const std::string& name)
-    {
-        return groups[name];
-    }
-
     const auto& ActiveGroupName() const
     {
         return activeGroup;
@@ -142,11 +128,19 @@ public:
 
     void ChangeActiveGroup(const std::string& name)
     {
-        groups[name];
+        if (groups.find(name) == groups.end())
+        {
+            groups[name] = Group(name);
+        }
         activeGroup = name;
     }
 
     const auto& GetActiveGroup() const
+    {
+        return groups.find(activeGroup)->second;
+    }
+
+    auto& GetActiveGroup()
     {
         return groups.find(activeGroup)->second;
     }
@@ -207,7 +201,7 @@ namespace nlohmann
         {
             try
             {
-                auto name = j["name"].get<std::string>();
+                auto name = j["name"];
                 auto entries = j["words"].get<std::list<Entry>>();
                 group = Group(std::move(name), std::move(entries));
             }
@@ -225,11 +219,8 @@ namespace nlohmann
         {
             j = json{};
             j["activeGroup"] = dictionary.ActiveGroupName();
-            j["groups"] = [&dictionary]{
-                std::vector<Group> v;
-                v.reserve(dictionary.Size());
-                return v;
-            }();
+            j["groups"] = std::vector<Group>{};
+
             auto groups = dictionary.GetAllGroups();
             for (const auto& [_, group] : groups)
             {
