@@ -32,17 +32,18 @@ json GetJson(const std::filesystem::path& path)
 
 int main(int argc, char** argv)
 {
+    /* load jsons from files */
     json dictionaryJson = GetJson(DICTIONARY_JSON_PATH);
     if (dictionaryJson.empty())
     {
         dictionaryJson = Dictionary();
     }
-
     json activeGroupJson = GetJson(ACTIVE_GROUP_JSON_PATH);
     if (activeGroupJson.empty())
     {
         activeGroupJson = Group();
     }
+    /* ===================== */
 
     if (argc < 2)
     {
@@ -66,35 +67,20 @@ int main(int argc, char** argv)
     }
     else if (std::strcmp(argv[1], "groups") == 0)
     {
-        std::cout << "Active group is " << dictionaryJson["activeGroup"];
-        std::cout << "\nAvailable groups are:";
-        auto groups = dictionaryJson.get<Dictionary>().GetAllGroups();
-        for (const auto& [name, _] : groups)
-        {
-            std::cout << "\n  \"" << name << '\"';
-        }
-        std::endl(std::cout);
+        Commands::ListGroups(dictionaryJson);
     }
     else if (std::strcmp(argv[1], "switch") == 0)
     {
-        Dictionary dictionary = dictionaryJson;
-        dictionary.GetActiveGroup() = activeGroupJson;
-        if (argc < 3)
-        {
-            std::cout << "Error: No group name provided\n"
-                      << "The usage is `words switch <group>`" << std::endl;
-            return 0;
-        }
-
-        dictionary.ChangeActiveGroup(argv[2]);
-        dictionaryJson = dictionary;
-        activeGroupJson = dictionary.GetActiveGroup();
+        Commands::Switch(dictionaryJson, activeGroupJson, argc, argv);
     }
+
+    /* save modified jsons in files */
     std::ofstream ofile{ ACTIVE_GROUP_JSON_PATH };
     ofile << activeGroupJson.dump(4);
     ofile.close();
     ofile.open( DICTIONARY_JSON_PATH );
     ofile << dictionaryJson.dump(4);
+    /* ============================ */
 
     return 0;
 }

@@ -126,6 +126,35 @@ public:
         j = json(group);
     }
 
+    static void Switch(json& dictionaryJson, json& activeGroupJson,
+                       int argc, char** argv)
+    {
+        Dictionary dictionary = dictionaryJson;
+        dictionary.GetActiveGroup() = activeGroupJson;
+        if (argc < 3)
+        {
+            std::cout << "Error: No group name provided\n"
+                      << "The usage is `words switch <group>`" << std::endl;
+            return;
+        }
+
+        dictionary.ChangeActiveGroup(argv[2]);
+        dictionaryJson = dictionary;
+        activeGroupJson = dictionary.GetActiveGroup();
+    }
+
+    static void ListGroups(json& dictionaryJson)
+    {
+        std::cout << "Active group is " << dictionaryJson["activeGroup"];
+        std::cout << "\nAvailable groups are:";
+        auto groups = dictionaryJson.get<Dictionary>().GetAllGroups();
+        for (const auto& [name, _] : groups)
+        {
+            std::cout << "\n  \"" << name << '\"';
+        }
+        std::endl(std::cout);
+    }
+
 private:
     static const Entry& PickRandomEntry(const Group& group)
     {
